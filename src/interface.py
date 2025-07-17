@@ -255,6 +255,3 @@ def detect_hardware():
     show_completion_message()
 
 
-if __name__ == "__main__":
-    logger_config.setup_logger()
-    show_password_window()

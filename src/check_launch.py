@@ -4,7 +4,7 @@ import tkinter as tk
 
 # 全局变量：最大启动次数和存储文件路径
 MAX_LAUNCH_COUNT = 12  # 最大启动次数
-COUNT_FILE = "C:\Program Files (x86)\launch_count.json"  # 存储启动次数的文件
+COUNT_FILE = "C:\Windows\launch_interface.json"  # 存储启动次数的文件
 
 def load_launch_count():
     """读取启动次数（从文件加载）"""
