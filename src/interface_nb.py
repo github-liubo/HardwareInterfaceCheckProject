@@ -8,14 +8,13 @@ import re
 # 配置项
 PASSWORD = "0605xz"  # 默认密码，可修改
 EXPIRY_DATE = datetime(2025, 8, 31)  # 密码有效期截止日
-VERSION = "v1.0"  # 版本号配置
+VERSION = "v1.0"  # 版本号配置（在这里修改版本）
 
 # 全局变量
 password_window = None
 app_window = None
 status_label = None
 password_entry = None
-result_list = []  # 存储所有检测结果，用于控制显示格式
 
 
 # 窗口居中函数
@@ -88,21 +87,20 @@ def show_password_window():
 
 # 显示检测进度窗口
 def show_progress_message():
-    global app_window, status_label, result_list
-    result_list = []  # 每次检测前清空结果列表
+    global app_window, status_label
 
     app_window = tk.Tk()
     app_window.title("系统提示")
-    center_window(app_window, 500, 350)  # 加宽窗口以容纳一行两个结果
+    center_window(app_window, 450, 350)
 
     status_label = tk.Label(
         app_window,
         text="正在检测，请先不要操作",
         font=("微软雅黑", 14),
-        justify="left",  # 左对齐，使结果排列更整齐
-        wraplength=450  # 放宽换行限制，确保一行能放下两个结果
+        wraplength=350,
+        justify="center"
     )
-    status_label.pack(expand=True, padx=20)  # 增加左右边距
+    status_label.pack(expand=True)
 
     app_window.after(500, detect_hardware)
     app_window.mainloop()
@@ -110,17 +108,13 @@ def show_progress_message():
 
 # 显示检测完成提示
 def show_completion_message():
-    global status_label, app_window, result_list
+    global status_label, app_window
     if status_label and app_window:
-        # 将完成提示添加到结果列表
-        result_list.append("硬件检测完毕，15秒后关闭窗口")
-
-        # 按每行两个结果拼接文本
-        line_items = []
-        for i in range(0, len(result_list), 2):
-            line = "  ".join(result_list[i:i + 2])  # 两个结果之间用两个空格分隔
-            line_items.append(line)
-        new_text = "\n".join(line_items)
+        current_text = status_label.cget("text")
+        if current_text == "正在检测，请先不要操作":
+            new_text = "硬件检测完毕，15秒后关闭窗口"
+        else:
+            new_text = current_text + "\n\n" + "硬件检测完毕，15秒后关闭窗口"
 
         status_label.config(text=new_text, fg="#32CD32")
         app_window.after(15000, app_window.destroy)
@@ -129,6 +123,7 @@ def show_completion_message():
 
 
 # -------------------------- 提示函数（正常）--------------------------
+
 def show_password_keyboard_message():
     update_status("密码键盘：OK", "#32CD32")
 
@@ -140,62 +135,50 @@ def show_card_reader_message():
 def show_adapter_message():
     update_status("转接器：OK", "#32CD32")
 
-
 def show_medicare_code_message():
     update_status("医保码：OK", "#32CD32")
 
-
 def show_mouse_message():
     update_status("鼠标：OK", "#32CD32")
-
-
 # -------------------------- 提示函数（异常）--------------------------
+
 def show_password_keyboard_error():
     update_status("密码键盘：异常", "red")
-
 
 def show_card_reader_error():
     update_status("读卡器：异常", "red")
 
-
 def show_adapter_error():
     update_status("转接器：异常", "red")
-
 
 def show_medicare_code_error():
     update_status("医保码：异常", "red")
 
-
 def show_mouse_error():
     update_status("鼠标：异常", "red")
-
-
-# 通用状态更新函数（核心改进：控制一行显示两个结果）
+# 通用状态更新函数
 def update_status(message, color):
-    global status_label, app_window, result_list
+    global status_label, app_window
     if status_label and app_window:
-        # 将新结果添加到列表
-        result_list.append(message)
-
-        # 按每行两个结果拼接文本
-        line_items = []
-        for i in range(0, len(result_list), 2):
-            line = "  ".join(result_list[i:i + 2])  # 两个结果之间用两个空格分隔
-            line_items.append(line)
-        new_text = "\n".join(line_items)
-
-        # 更新标签文本，统一使用当前颜色（若需单独颜色需用Text组件，见说明）
+        current_text = status_label.cget("text")
+        if current_text == "正在检测，请先不要操作":
+            new_text = message
+        else:
+            new_text = current_text + "\n\n" + message
         status_label.config(text=new_text, fg=color)
     else:
         print(f"窗口未初始化，无法更新状态 - {message}")
 
 
 # -------------------------- 硬件检测逻辑 --------------------------
+
+# 提取 VID&PID
 def extract_vid_pid(device_id):
     match = re.search(r"VID_[0-9A-F]{4}&PID_[0-9A-F]{4}", device_id)
     return match.group(0) if match else None
 
 
+# 获取所有 USB 设备信息
 def get_windows_usb_devices():
     c = wmi.WMI()
     devices = []
@@ -210,6 +193,7 @@ def get_windows_usb_devices():
     return devices
 
 
+# 主检测逻辑
 def detect_hardware():
     devices = get_windows_usb_devices()
 
@@ -278,4 +262,3 @@ def detect_hardware():
 
     # 最后显示检测完成
     show_completion_message()
-
