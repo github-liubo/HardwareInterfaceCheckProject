@@ -3,6 +3,8 @@ from tkinter import messagebox
 from datetime import datetime
 import wmi
 import re
+import pystray
+from PIL import Image, ImageDraw
 
 # 配置项
 PASSWORD = "0605xz"
@@ -19,7 +21,7 @@ result_count = 0
 error_count = 0
 
 
-# 窗口居中函数（不变）
+# 窗口居中函数
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
@@ -28,7 +30,7 @@ def center_window(window, width, height):
     window.geometry(f"{width}x{height}+{x}+{y}")
 
 
-# 验证密码（不变）
+# 验证密码
 def verify_password():
     current_date = datetime.now()
     if current_date > EXPIRY_DATE:
@@ -44,7 +46,7 @@ def verify_password():
         password_entry.delete(0, tk.END)
 
 
-# 显示密码输入窗口（不变）
+# 显示密码输入窗口
 def show_password_window():
     global password_window, password_entry
     password_window = tk.Toplevel(root)
@@ -80,7 +82,7 @@ def show_password_window():
     password_window.bind("<Return>", lambda event: verify_password())
 
 
-# 显示检测进度窗口（不变）
+# 显示检测进度窗口
 def show_progress_message():
     global app_window, status_frame, labels, result_count, error_count
     labels = []
@@ -111,7 +113,7 @@ def show_progress_message():
     app_window.after(500, detect_hardware)
 
 
-# 显示完成信息（不变）
+# 根据错误数量显示不同的完成信息
 def show_completion_message():
     global status_frame, labels, result_count, error_count
     if status_frame and app_window:
@@ -140,10 +142,10 @@ def show_completion_message():
         print("窗口未初始化，无法更新状态-检测完毕")
 
 
-# 正常提示函数（不变）
+# 正常提示函数（添加打印）
 def show_password_keyboard_message():
     status = "密码键盘：OK"
-    print(f"检测状态: {status}")
+    print(f"检测状态: {status}")  # 打印正常状态
     update_status(status, "#32CD32")
 
 
@@ -171,12 +173,12 @@ def show_mouse_message():
     update_status(status, "#32CD32")
 
 
-# 异常提示函数（不变）
+# 异常提示函数（添加打印）
 def show_password_keyboard_error():
     global error_count
     error_count += 1
     status = "密码键盘：异常"
-    print(f"检测状态: {status}")
+    print(f"检测状态: {status}")  # 打印异常状态
     update_status(status, "red")
 
 
@@ -212,7 +214,7 @@ def show_mouse_error():
     update_status(status, "red")
 
 
-# 通用状态更新函数（不变）
+# 通用状态更新函数
 def update_status(message, color):
     global status_frame, labels, result_count, app_window
     if status_frame and app_window:
@@ -236,26 +238,21 @@ def update_status(message, color):
         labels.append(new_label)
 
 
-# 硬件检测核心逻辑（修改部分）
+# 硬件检测逻辑（核心：添加设备信息打印）
 def extract_vid_pid(device_id):
-    """从设备ID中提取VID和PID，返回元组(VID, PID)或None"""
-    match = re.search(r"VID_([0-9A-F]{4})&PID_([0-9A-F]{4})", device_id)
-    if match:
-        return (match.group(1), match.group(2))  # 返回(VID, PID)
-    return None
+    match = re.search(r"VID_[0-9A-F]{4}&PID_[0-9A-F]{4}", device_id)
+    return match.group(0) if match else None
 
 
 def get_windows_usb_devices():
-    """获取所有USB设备，包含名称、设备ID、(VID, PID)、状态"""
     c = wmi.WMI()
     devices = []
     for device in c.Win32_PnPEntity():
         if device.Name and device.DeviceID and device.Status:
-            vid_pid = extract_vid_pid(device.DeviceID)  # 提取(VID, PID)
             devices.append({
                 "name": device.Name,
                 "device_id": device.DeviceID,
-                "vid_pid": vid_pid,  # 格式：(VID, PID)或None
+                "vid_pid": extract_vid_pid(device.DeviceID),
                 "status": device.Status
             })
     return devices
@@ -263,53 +260,36 @@ def get_windows_usb_devices():
 
 def detect_hardware():
     devices = get_windows_usb_devices()
+
     print("===== 找到的设备列表（含 VID/PID） =====")
-    # 调整表头，适配新的VID/PID格式
-    print(f"{'名称':<30} | 状态 | {'VID&PID':<15}")
+    print(f"{'名称':<30} | 状态 | {'VID/PID':<15} | 设备ID")
 
     for dev in devices:
         vid_pid = dev['vid_pid']
         if vid_pid:
-            # 将元组(VID, PID)转换为字符串（如"046D&C534"）
-            vid_pid_str = f"{vid_pid[0]}&{vid_pid[1]}"
-            # 用转换后的字符串打印
-            print(f"{dev['name']:<30} | {dev['status']}  | {vid_pid_str:<15}")
-
-    # 设备匹配规则：通过VID、PID、状态=OK匹配（请根据实际设备修改VID/PID）
+            print(f"{dev['name']:<30} | {dev['status']}  | {vid_pid:<15} | {dev['device_id']}")
     device_patterns = [
         {
             "name": "密码键盘",
-            # 需要匹配的设备列表：每个设备需满足(VID, PID, 状态=OK)
-            "devices": [
-                ("23A4", "2206", "OK"),  # 示例：罗技设备的某型号密码键盘组件1
-                ("23A4", "2206", "OK")   # 示例：同一设备的另一组件（共享VID/PID）
-            ],
+            "devices": [("USB 输入设备", "OK"), ("符合 HID 标准的条形码标记读取器", "OK")],
             "callback_ok": show_password_keyboard_message,
             "callback_err": show_password_keyboard_error,
         },
         {
             "name": "读卡器",
-            "devices": [
-                ("23A4", "2225", "OK"),  # 示例：读卡器组件1
-                ("23A4", "2225", "OK")   # 示例：读卡器组件2
-            ],
+            "devices": [("USB 输入设备", "OK"), ("符合 HID 标准的供应商定义设备", "OK")],
             "callback_ok": show_card_reader_message,
             "callback_err": show_card_reader_error,
         },
         {
             "name": "医保码",
-            "devices": [
-                ("26F1", "8801", "OK"),  # 关键：匹配VID=26F1、PID=8801的设备
-                ("26F1", "8801", "OK")   # 同一医保码设备的多个组件
-            ],
+            "devices": [("USB 输入设备", "OK"), ("HID Keyboard Device", "OK")],
             "callback_ok": show_medicare_code_message,
             "callback_err": show_medicare_code_error,
         },
         {
             "name": "鼠标",
-            "devices": [
-                ("046D", "C534", "OK")   # 示例：罗技鼠标的VID/PID
-            ],
+            "devices": [("USB 输入设备", "OK"), ("HID-compliant mouse", "OK")],
             "callback_ok": show_mouse_message,
             "callback_err": show_mouse_error,
         }
@@ -318,32 +298,27 @@ def detect_hardware():
     print("\n===== 开始检测设备 =====")
     for pattern_info in device_patterns:
         pattern_name = pattern_info["name"]
-        required_devices = pattern_info["devices"]  # 需要匹配的(VID, PID, 状态)列表
+        pattern_devices = pattern_info["devices"]
         callback_ok = pattern_info["callback_ok"]
         callback_err = pattern_info["callback_err"]
 
         print(f"\n检测 {pattern_name}...")
-        matched_count = 0  # 已匹配的设备数量
-
-        # 检查每个需要匹配的设备是否存在
-        for req_vid, req_pid, req_status in required_devices:
-            found = False
+        matched_devices = []
+        for expected_name, expected_status in pattern_devices:
+            print(f"  查找设备: 名称={expected_name}, 状态={expected_status}")
             for dev in devices:
-                dev_vid, dev_pid = dev['vid_pid'] if dev['vid_pid'] else (None, None)
-                # 匹配条件：VID相同 + PID相同 + 状态=OK
-                if dev_vid == req_vid and dev_pid == req_pid and dev['status'] == req_status:
-                    found = True
-                    matched_count += 1
-                    print(f"  找到匹配设备：VID={req_vid}, PID={req_pid}, 状态={req_status}")
+                if dev["name"] == expected_name and dev["status"] == expected_status:
+                    matched_devices.append(dev)
+                    print(f"  找到匹配设备: {dev['name']} (状态: {dev['status']})")
                     break
-            if not found:
-                print(f"  未找到匹配设备：VID={req_vid}, PID={req_pid}, 状态={req_status}")
+            else:
+                print(f"  未找到匹配设备: {expected_name} (状态: {expected_status})")
 
-        # 所有需要匹配的设备都找到才算正常
-        if matched_count == len(required_devices):
+        if len(matched_devices) == len(pattern_devices) and len(set(dev["vid_pid"] for dev in matched_devices)) == 1:
             callback_ok()
         else:
             callback_err()
 
     show_completion_message()
+
 
