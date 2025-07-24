@@ -116,15 +116,15 @@ def monitor_network(host, interval=5, success_threshold=80, latency_threshold=20
         print("\n监控已停止")
 
 
-if __name__ == "__main__":
-    TARGET_HOST = "172.16.204.254"  # 目标IP地址
-    CHECK_INTERVAL = 5  # 检查间隔(秒)
-    SUCCESS_THRESHOLD = 80  # 成功率阈值(%)
-    LATENCY_THRESHOLD = 200  # 延迟阈值(ms)
-
-    monitor_network(
-        host=TARGET_HOST,
-        interval=CHECK_INTERVAL,
-        success_threshold=SUCCESS_THRESHOLD,
-        latency_threshold=LATENCY_THRESHOLD
-    )
+# if __name__ == "__main__":
+#     TARGET_HOST = "172.16.204.254"  # 目标IP地址
+#     CHECK_INTERVAL = 5  # 检查间隔(秒)
+#     SUCCESS_THRESHOLD = 80  # 成功率阈值(%)
+#     LATENCY_THRESHOLD = 200  # 延迟阈值(ms)
+#
+#     monitor_network(
+#         host=TARGET_HOST,
+#         interval=CHECK_INTERVAL,
+#         success_threshold=SUCCESS_THRESHOLD,
+#         latency_threshold=LATENCY_THRESHOLD
+#     )

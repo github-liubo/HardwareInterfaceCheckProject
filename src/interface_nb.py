@@ -13,7 +13,7 @@ VERSION = "v1.0"  # 版本号配置（在这里修改版本）
 # 全局变量
 password_window = None
 app_window = None
-status_label = None
+status_text = None  # 改用 tk.Text
 password_entry = None
 
 
@@ -87,87 +87,100 @@ def show_password_window():
 
 # 显示检测进度窗口
 def show_progress_message():
-    global app_window, status_label
+    global app_window, status_text
 
     app_window = tk.Tk()
     app_window.title("系统提示")
     center_window(app_window, 450, 350)
 
-    status_label = tk.Label(
+    # 使用 tk.Text 控件显示多行文本
+    status_text = tk.Text(
         app_window,
-        text="正在检测，请先不要操作",
         font=("微软雅黑", 14),
-        wraplength=350,
-        justify="center"
+        wrap="word",
+        spacing1=0,           # 段前间距
+        spacing2=0,           # 行间距
+        spacing3=0,           # 段后间距
+        padx=15,
+        pady=15,
+        bd=0,
+        highlightthickness=0,
+        state="disabled",
+        bg=app_window.cget("bg")
     )
-    status_label.pack(expand=True)
+    status_text.pack(expand=True, fill="both")
+
+    # 插入初始提示信息
+    insert_message("正在检测，请先不要操作", "black")
 
     app_window.after(500, detect_hardware)
     app_window.mainloop()
 
 
+# 插入信息到 tk.Text 控件
+def insert_message(message, color="black", tag_name=None):
+    global status_text
+    if status_text:
+        status_text.config(state="normal")
+        status_text.insert("end", message + "\n\n", (tag_name or "color",))
+        status_text.config(state="disabled")
+
+        if tag_name:
+            status_text.tag_configure(tag_name, foreground=color, spacing1=20, spacing2=15, spacing3=20, lmargin1=20, lmargin2=20)
+        else:
+            status_text.tag_configure("color", foreground=color)
+
+        status_text.see("end")
+
+
 # 显示检测完成提示
 def show_completion_message():
-    global status_label, app_window
-    if status_label and app_window:
-        current_text = status_label.cget("text")
-        if current_text == "正在检测，请先不要操作":
-            new_text = "硬件检测完毕，15秒后关闭窗口"
-        else:
-            new_text = current_text + "\n\n" + "硬件检测完毕，15秒后关闭窗口"
-
-        status_label.config(text=new_text, fg="#32CD32")
-        app_window.after(15000, app_window.destroy)
-    else:
-        print("窗口未初始化，无法更新状态-检测完毕")
+    insert_message("检测完毕，关闭窗口", "red")
+    app_window.after(15000, app_window.destroy)
 
 
 # -------------------------- 提示函数（正常）--------------------------
 
 def show_password_keyboard_message():
-    update_status("密码键盘：OK", "#32CD32")
+    insert_message("密码键盘：OK", "#32CD32")
 
 
 def show_card_reader_message():
-    update_status("读卡器：OK", "#32CD32")
+    insert_message("读卡器：OK", "#32CD32")
 
 
 def show_adapter_message():
-    update_status("转接器：OK", "#32CD32")
+    insert_message("转接器：OK", "#32CD32")
+
 
 def show_medicare_code_message():
-    update_status("医保码：OK", "#32CD32")
+    insert_message("医保码：OK", "#32CD32")
+
 
 def show_mouse_message():
-    update_status("鼠标：OK", "#32CD32")
+    insert_message("鼠标：OK", "#32CD32")
+
+
 # -------------------------- 提示函数（异常）--------------------------
 
 def show_password_keyboard_error():
-    update_status("密码键盘：异常", "red")
+    insert_message("密码键盘：异常", "red")
+
 
 def show_card_reader_error():
-    update_status("读卡器：异常", "red")
+    insert_message("读卡器：异常", "red")
+
 
 def show_adapter_error():
-    update_status("转接器：异常", "red")
+    insert_message("转接器：异常", "red")
+
 
 def show_medicare_code_error():
-    update_status("医保码：异常", "red")
+    insert_message("医保码：异常", "red")
+
 
 def show_mouse_error():
-    update_status("鼠标：异常", "red")
-# 通用状态更新函数
-def update_status(message, color):
-    global status_label, app_window
-    if status_label and app_window:
-        current_text = status_label.cget("text")
-        if current_text == "正在检测，请先不要操作":
-            new_text = message
-        else:
-            new_text = current_text + "\n\n" + message
-        status_label.config(text=new_text, fg=color)
-    else:
-        print(f"窗口未初始化，无法更新状态 - {message}")
+    insert_message("鼠标：异常", "red")
 
 
 # -------------------------- 硬件检测逻辑 --------------------------
@@ -262,3 +275,7 @@ def detect_hardware():
 
     # 最后显示检测完成
     show_completion_message()
+
+# 启动入口
+if __name__ == "__main__":
+    show_password_window()

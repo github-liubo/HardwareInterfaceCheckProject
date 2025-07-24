@@ -11,7 +11,7 @@
 - INFO - 描述: 通用 USB 集线器
 - INFO - 设备ID: USB\VID_05E3&PID_0608\5&35DAB4D4&0&1
 - INFO - ------------------------------
-3、密码键盘：
+2、密码键盘：
 - INFO - 新设备插入: USB 输入设备
 - INFO - 描述: USB 输入设备
 - INFO - 设备ID: USB\VID_23A4&PID_2206\12345678
@@ -20,7 +20,7 @@
 - INFO - 描述: 符合 HID 标准的条形码标记读取器
 - INFO - 设备ID: HID\VID_23A4&PID_2206\6&3191EDEA&0&0000
 - INFO - ------------------------------
-4、医保码：
+3、医保码：
 - INFO - 新设备插入: USB 输入设备
 - INFO - 描述: USB 输入设备
 - INFO - 设备ID: USB\VID_26F1&PID_8801\1234567890ABCD
@@ -29,7 +29,7 @@
 - INFO - 描述: HID Keyboard Device
 - INFO - 设备ID: HID\VID_26F1&PID_8801\6&3723DBB&0&0000
 - INFO - ------------------------------
-5、鼠标：
+4、鼠标：
 - INFO - 新设备插入: USB 输入设备
 - INFO - 描述: USB 输入设备
 - INFO - 设备ID: USB\VID_1C4F&PID_0034\6&32D6D89E&0&4
@@ -38,7 +38,7 @@
 - INFO - 描述: HID-compliant mouse
 - INFO - 设备ID: HID\VID_1C4F&PID_0034\7&A049349&0&0000
 - INFO - ------------------------------
-6、集线器：
+5、集线器：
 - INFO - 新设备插入: 通用 USB 集线器
 - INFO - 描述: 通用 USB 集线器
 - INFO - 设备ID: USB\VID_14CD&PID_8601\5&35DAB4D4&0&3

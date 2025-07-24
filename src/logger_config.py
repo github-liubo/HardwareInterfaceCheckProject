@@ -16,7 +16,7 @@ class StdoutLogger:
         pass  # 忽略 flush 方法
 
 
-def setup_logger(log_file='monitor.log'):
+def setup_logger(log_file='monitor_detection.log'):
     # 配置基础日志格式
     logging.basicConfig(
         level=logging.INFO,
