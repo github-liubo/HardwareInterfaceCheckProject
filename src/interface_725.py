@@ -3,12 +3,11 @@ from tkinter import messagebox
 from datetime import datetime
 import wmi
 import re
-from usb_monitor import main as start_usb_monitoring
 
 # 配置项
 PASSWORD = "0605xz"
 EXPIRY_DATE = datetime(2025, 8, 31)
-VERSION = "v1.2"
+VERSION = "v1.1"
 
 # 全局变量
 root = None
@@ -109,15 +108,8 @@ def show_progress_message():
 
     app_window.protocol("WM_DELETE_WINDOW", on_close)
 
-    # 延迟启动检测
     app_window.after(500, detect_hardware)
 
-    # 启动USB监控
-    def callback():
-        if app_window.winfo_exists():  # 确保窗口还存在
-            app_window.after(0, detect_hardware)  # 在主线程中更新UI
-
-    start_usb_monitoring(callback)
 
 # 显示完成信息（不变）
 def show_completion_message():
@@ -178,10 +170,6 @@ def show_mouse_message():
     print(f"检测状态: {status}")
     update_status(status, "#32CD32")
 
-def show_network_message():
-    status = "社区网络：OK"
-    print(f"检测状态: {status}")
-    update_status(status, "#32CD32")
 
 # 异常提示函数（不变）
 def show_password_keyboard_error():
@@ -215,6 +203,7 @@ def show_medicare_code_error():
     print(f"检测状态: {status}")
     update_status(status, "red")
 
+
 def show_mouse_error():
     global error_count
     error_count += 1
@@ -222,45 +211,30 @@ def show_mouse_error():
     print(f"检测状态: {status}")
     update_status(status, "red")
 
-def show_network_error():
-    global error_count
-    error_count += 1
-    status = "社区网络：异常"
-    print(f"检测状态: {status}")
-    update_status(status, "red")
 
 # 通用状态更新函数（不变）
 def update_status(message, color):
     global status_frame, labels, result_count, app_window
     if status_frame and app_window:
-        # 跳过初始标签（labels[0]是"正在检测..."），从新标签开始计数
-        # 初始标签只在首次检测时显示，设备状态标签从第二行开始
         if result_count == 0 and labels:
-            # 隐藏初始标签（检测开始后不再需要）
             initial_label = labels[0]
             initial_label.grid_remove()
 
-        # 不再复用初始标签，所有设备状态标签均新建
-        label = tk.Label(
+        result_count += 1
+
+        new_label = tk.Label(
             status_frame,
             text=message,
             font=("微软雅黑", 18),
             fg=color
         )
-        # 行号从1开始（0行留给初始标签，已隐藏），每行显示2个标签
-        row = (result_count // 2) + 1
-        col = result_count % 2
-        label.grid(row=row, column=col, padx=30, pady=20, sticky="w")
-        labels.append(label)
 
-        result_count += 1
+        row = (result_count - 1) // 2 + 1
+        col = (result_count - 1) % 2
 
-def clear_status_labels():
-    global labels, result_count
-    for label in labels:
-        label.grid_remove()  # 隐藏标签
-    labels = []  # 清空列表
-    result_count = 0
+        new_label.grid(row=row, column=col, padx=30, pady=20, sticky="w")
+        labels.append(new_label)
+
 
 # 硬件检测核心逻辑（修改部分）
 def extract_vid_pid(device_id):
@@ -288,18 +262,6 @@ def get_windows_usb_devices():
 
 
 def detect_hardware():
-    clear_status_labels()  # 清空旧状态
-
-    # 添加新的初始提示
-    initial_label = tk.Label(
-        status_frame,
-        text="正在检测，请先不要操作",
-        font=("微软雅黑", 18)
-    )
-    initial_label.grid(row=0, column=0, columnspan=2, pady=10)
-    labels.append(initial_label)
-
-    # 真正开始检测
     devices = get_windows_usb_devices()
     print("===== 找到的设备列表（含 VID/PID） =====")
     # 调整表头，适配新的VID/PID格式
@@ -346,27 +308,10 @@ def detect_hardware():
         {
             "name": "鼠标",
             "devices": [
-                ("1C4F", "0034", "OK"),   # 示例：罗技鼠标的VID/PID
-                ("1C4F", "0034", "OK")
+                ("046D", "C534", "OK")   # 示例：罗技鼠标的VID/PID
             ],
             "callback_ok": show_mouse_message,
             "callback_err": show_mouse_error,
-        },
-        {
-            "name": "转接器",
-            "devices": [
-                ("14CD", "8601", "OK")  # 示例：罗技鼠标的VID/PID
-            ],
-            "callback_ok": show_adapter_message,
-            "callback_err": show_adapter_error,
-        },
-        {
-            "name": "社区网络",
-            "devices": [
-                ("XXXX", "XXXX", "OK")  # 示例：罗技鼠标的VID/PID
-            ],
-            "callback_ok": show_network_message,
-            "callback_err": show_network_error,
         }
     ]
 

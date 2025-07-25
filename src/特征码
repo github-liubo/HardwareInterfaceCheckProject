@@ -53,3 +53,6 @@ USB 输入设备	OK	23A4&2206
 符合 HID 标准的供应商定义设备	OK	23A4&2225
 USB 输入设备	OK	23A4&2225
 通用 USB 集线器	OK	05E3&0608
+鼠标：
+USB 输入设备 | OK | 1C4F&0034
+HID-compliant mouse | OK | 1C4F&0034
